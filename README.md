@@ -7,4 +7,4 @@ User Login and Registration Backend with Email Verification
 * Spring Web
 * MySQL
 * Lombok
-* [MailDev]("https://github.com/maildev/maildev") - testing email confirmation
+* [MailDev](https://github.com/maildev/maildev) - testing email confirmation
