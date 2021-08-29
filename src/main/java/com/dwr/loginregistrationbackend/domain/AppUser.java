@@ -22,36 +22,29 @@ public class AppUser implements UserDetails {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "appuser_generator")
     @SequenceGenerator(name="appuser_generator", sequenceName = "appuser_seq", allocationSize = 1)
     private Long id;
-    private String name;
-    private String username;
+    private String firstname;
+    private String lastname;
     private String email;
     private String password;
 
     @Enumerated(EnumType.STRING)
     private AppUserRole appUserRole;
 
-    private Boolean locked;
-    private Boolean enabled;
+    private Boolean locked = false;
+    private Boolean enabled = false;
 
-    private boolean isAccountNonExpired;
-    private boolean isAccountLocked;
-    private boolean isCredentialsNonExpired;
-    private boolean isEnabled;
 
-    public AppUser(String name, String username, String email, String password, AppUserRole appUserRole, Boolean locked,
-                   Boolean enabled, boolean isAccountNonExpired,
-                   boolean isAccountLocked, boolean isCredentialsNonExpired, boolean isEnabled) {
-        this.name = name;
-        this.username = username;
+    public AppUser(String firstname, String lastname, String email, String password, AppUserRole appUserRole) {
+        this.firstname = firstname;
+        this.lastname = lastname;
         this.email = email;
         this.password = password;
         this.appUserRole = appUserRole;
-        this.locked = locked;
-        this.enabled = enabled;
-        this.isAccountNonExpired = isAccountNonExpired;
-        this.isAccountLocked = isAccountLocked;
-        this.isCredentialsNonExpired = isCredentialsNonExpired;
-        this.isEnabled = isEnabled;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
     }
 
     @Override
@@ -65,9 +58,8 @@ public class AppUser implements UserDetails {
         return this.password;
     }
 
-    @Override
-    public String getUsername() {
-        return this.username;
+    public String getLastname() {
+        return this.lastname;
     }
 
     @Override
