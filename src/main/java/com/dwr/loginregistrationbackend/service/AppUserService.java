@@ -1,13 +1,19 @@
 package com.dwr.loginregistrationbackend.service;
 
 import com.dwr.loginregistrationbackend.domain.AppUser;
+import com.dwr.loginregistrationbackend.email.EmailSender;
+import com.dwr.loginregistrationbackend.registration.token.ConfirmationToken;
 import com.dwr.loginregistrationbackend.repository.AppUserRepository;
+import com.dwr.loginregistrationbackend.util.EmailBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Service
@@ -16,6 +22,11 @@ public class AppUserService implements UserDetailsService {
 
     private final AppUserRepository repository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final ConfirmationTokenService tokenService;
+    private final EmailSender emailSender;
+    private final EmailBuilder emailBuilder;
+
+    private static final String REGISTRATION_LINK = "http://localhost:8080/api/v1/registration/confirm?token=";
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -23,14 +34,18 @@ public class AppUserService implements UserDetailsService {
                 new UsernameNotFoundException(String.format("%s was not found in database", email)));
     }
 
-    public String signUpUser(AppUser appUser){
+    public String signUpUser(AppUser appUser) {
+
+        String token = UUID.randomUUID().toString();
 
         boolean userExists = repository
                 .findByEmail(appUser.getEmail())
                 .isPresent();
 
-        if(userExists){
-            throw new IllegalStateException("email already taken");
+        if (userExists && !appUser.getEnabled()) {
+            String link = REGISTRATION_LINK + token;
+            emailSender.send(appUser.getEmail(), emailBuilder.buildEmail(appUser.getFirstname(), link));
+            throw new IllegalStateException("email already taken or you haven't confirm your email");
         }
 
         String encodedPassword = bCryptPasswordEncoder.encode(appUser.getPassword());
@@ -38,9 +53,19 @@ public class AppUserService implements UserDetailsService {
 
         repository.save(appUser);
 
-        //TODO: SEND confirmation token
 
-        return "worked";
+
+
+        ConfirmationToken confirmationToken = new ConfirmationToken(
+                token, LocalDateTime.now(), LocalDateTime.now().plusMinutes(15), appUser);
+
+        tokenService.saveConfirmationToken(confirmationToken);
+
+        return token;
+    }
+
+    public int enableAppUser(String email){
+        return repository.enableAppUser(email);
     }
 
 }
